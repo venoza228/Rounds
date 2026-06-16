@@ -1,0 +1,47 @@
+// lang.js
+window.lang = {
+  ru: {
+    title: "ROUNDS ARENA",
+    mode: "Режим",
+    map: "Карта",
+    botMode: "Против бота",
+    localMode: "Локально 1×1",
+    maps: ["Арена", "Крыши", "Подземелье", "Космос", "Лес"],
+    start: "НАЧАТЬ БОЙ",
+    settings: "Настройки",
+    music: "Музыка",
+    sfx: "Звуки",
+    controls: "Управление",
+    close: "Закрыть",
+    restart: "Заново",
+    fullscreen: "Во весь экран",
+    back: "← Меню",
+    roundStart: "РАУНД!",
+    playerWins: "ПОБЕДА!",
+    botWins: "ПОРАЖЕНИЕ",
+    p1Wins: "ИГРОК 1 ПОБЕДИЛ",
+    p2Wins: "ИГРОК 2 ПОБЕДИЛ"
+  },
+  en: {
+    title: "ROUNDS ARENA",
+    mode: "Mode",
+    map: "Map",
+    botMode: "vs Bot",
+    localMode: "Local 1×1",
+    maps: ["Arena", "Rooftops", "Dungeon", "Space", "Forest"],
+    start: "START FIGHT",
+    settings: "Settings",
+    music: "Music",
+    sfx: "Sounds",
+    controls: "Controls",
+    close: "Close",
+    restart: "Restart",
+    fullscreen: "Fullscreen",
+    back: "← Menu",
+    roundStart: "ROUND!",
+    playerWins: "YOU WIN!",
+    botWins: "YOU LOSE",
+    p1Wins: "PLAYER 1 WINS",
+    p2Wins: "PLAYER 2 WINS"
+  }
+};
