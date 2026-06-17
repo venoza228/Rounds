@@ -1,146 +1,133 @@
-// js/player.js
 (function() {
-  const MOVE_SPEED = 3;
-  const JUMP_POWER = -12;
-  const GRAVITY = 0.6;
-  const SHIELD_DURATION = 1.0;
-  const SHIELD_COOLDOWN = 5.0;
+  const MS = 3;
+  const JP = -12;
+  const GR = 0.6;
+  const SD = 1.0;
+  const SC = 5.0;
 
-  function createPlayer(x, facing, color) {
+  function cp(x, f, c) {
     return {
-      id: color,
-      x: x, y: 380, vx: 0, vy: 0,
-      w: 40, h: 60,
-      hp: 100, maxHp: 100,
-      onGround: false,
-      facing: facing,
-      blocking: false,
-      shootCooldown: 0,
-      spawnX: x,
-      spawnFacing: facing,
-      shieldTimer: 0,
-      shieldCooldown: 0
+      id: c, x: x, y: 380, vx: 0, vy: 0, w: 40, h: 60,
+      hp: 100, maxHp: 100, onGround: false, facing: f,
+      blocking: false, shootCooldown: 0, spawnX: x, spawnFacing: f,
+      shieldTimer: 0, shieldCooldown: 0, jumpsLeft: 1, maxJumps: 1,
+      regenTimer: 0
     };
   }
 
-  const player1 = createPlayer(100, 1, 'player1');
-  const player2 = createPlayer(660, -1, 'player2');
+  const p1 = cp(100, 1, 'player1');
+  const p2 = cp(660, -1, 'player2');
+  let e1 = null, e2 = null, s1 = null, s2 = null;
 
-  let elP1 = null;
-  let elP2 = null;
-  let elShield1 = null;
-  let elShield2 = null;
+  function initPlayer(a, b, c, d) { e1 = a; e2 = b; s1 = c; s2 = d; }
 
-  function initPlayer(el1, el2, shield1, shield2) {
-    elP1 = el1;
-    elP2 = el2;
-    elShield1 = shield1;
-    elShield2 = shield2;
+  function hasCard(playerId, cardId) {
+    if (window.G.cards && window.G.cards.getPlayerCards) {
+      const cards = window.G.cards.getPlayerCards(playerId);
+      for (let i = 0; i < cards.length; i++) {
+        if (cards[i].id === cardId) return true;
+      }
+    }
+    return false;
   }
 
-  function activateShield(entity) {
-    if (entity.shieldCooldown <= 0 && entity.shieldTimer <= 0) {
-      entity.shieldTimer = SHIELD_DURATION;
+  function actS(en) {
+    if (en.shieldCooldown <= 0 && en.shieldTimer <= 0) {
+      en.shieldTimer = SD;
       window.G.audio.playBlock();
     }
   }
 
-  function updateEntity(entity, dt, input, el, shieldEl) {
-    let moveX = 0;
-    if (input.isLeft()) moveX -= 1;
-    if (input.isRight()) moveX += 1;
+  function updE(en, dt, inp, el, shEl) {
+    const speedMult = hasCard(en.id, 'speed') ? 1.3 : 1;
+    const fastShield = hasCard(en.id, 'fastshield');
+    const actualSC = fastShield ? 3.0 : SC;
+    const doubleJump = hasCard(en.id, 'doublejump');
+    en.maxJumps = doubleJump ? 2 : 1;
 
-    if (input.isJump() && entity.onGround) {
-      entity.vy = JUMP_POWER;
-      entity.onGround = false;
-      window.G.audio.playJump();
-    }
+    let mx = 0;
+    if (inp.isLeft()) mx -= 1;
+    if (inp.isRight()) mx += 1;
 
-    if (input.isShoot()) {
-      if (entity.shootCooldown <= 0) {
-        const bx = entity.facing > 0 ? entity.x + entity.w : entity.x - 8;
-        const by = entity.y + entity.h / 2;
-        window.G.bullet.createBullet(entity.id, bx, by, entity.facing, false);
-        entity.shootCooldown = 25;
-        window.G.audio.playShoot();
+    if (inp.isJumpJustPressed && inp.isJumpJustPressed()) {
+      if (en.onGround) {
+        en.vy = JP; en.onGround = false;
+        en.jumpsLeft = en.maxJumps - 1;
+        window.G.audio.playJump();
+      } else if (en.jumpsLeft > 0) {
+        en.vy = JP; en.jumpsLeft--;
+        window.G.audio.playJump();
       }
     }
 
-    if (input.isBlockPressed()) {
-      activateShield(entity);
+    if (inp.isShoot && inp.isShoot() && en.shootCooldown <= 0) {
+      const bx = en.facing > 0 ? en.x + en.w : en.x - 8;
+      const by = en.y + en.h / 2;
+      if (hasCard(en.id, 'triple')) {
+        window.G.bullet.createBullet(en.id, bx, by, en.facing, false);
+        window.G.bullet.createBullet(en.id, bx, by - 8, en.facing, true);
+        window.G.bullet.createBullet(en.id, bx, by + 8, en.facing, true);
+      } else {
+        window.G.bullet.createBullet(en.id, bx, by, en.facing, false);
+      }
+      en.shootCooldown = 25;
+      window.G.audio.playShoot();
     }
 
-    // Таймер щита
-    if (entity.shieldTimer > 0) {
-      entity.shieldTimer -= dt;
-      entity.blocking = true;
-      if (entity.shieldTimer <= 0) {
-        entity.shieldTimer = 0;
-        entity.shieldCooldown = SHIELD_COOLDOWN;
-        entity.blocking = false;
-      }
+    if (inp.isBlockPressed && inp.isBlockPressed()) actS(en);
+
+    if (en.shieldTimer > 0) {
+      en.shieldTimer -= dt / 60;
+      if (en.shieldTimer <= 0) { en.shieldTimer = 0; en.shieldCooldown = actualSC; en.blocking = false; }
+      else en.blocking = true;
     } else {
-      entity.blocking = false;
-      if (entity.shieldCooldown > 0) {
-        entity.shieldCooldown -= dt;
-        if (entity.shieldCooldown < 0) entity.shieldCooldown = 0;
-      }
+      en.blocking = false;
+      if (en.shieldCooldown > 0) { en.shieldCooldown -= dt / 60; if (en.shieldCooldown < 0) en.shieldCooldown = 0; }
     }
 
-    if (shieldEl) {
-      if (entity.blocking) shieldEl.classList.add('active');
-      else shieldEl.classList.remove('active');
-    }
+    if (shEl) { shEl.classList.toggle('active', en.shieldTimer > 0); }
 
-    if (moveX !== 0) entity.facing = moveX;
+    if (mx !== 0) en.facing = mx;
+    en.vx = mx * MS * speedMult * (en.blocking ? 0.3 : 1);
+    en.vy += GR * dt;
+    en.x += en.vx * dt;
+    en.y += en.vy * dt;
+    if (en.x < 0) en.x = 0;
+    if (en.x + en.w > window.G.map.GAME_W) en.x = window.G.map.GAME_W - en.w;
 
-    entity.vx = moveX * MOVE_SPEED * (entity.blocking ? 0.3 : 1);
-    entity.vy += GRAVITY * dt;
-    entity.x += entity.vx * dt;
-    entity.y += entity.vy * dt;
+    const wg = en.onGround;
+    window.G.map.collide(en);
+    if (en.onGround && !wg) en.jumpsLeft = en.maxJumps - 1;
+    if (en.shootCooldown > 0) en.shootCooldown -= dt;
 
-    if (entity.x < 0) entity.x = 0;
-    if (entity.x + entity.w > window.G.map.GAME_W) entity.x = window.G.map.GAME_W - entity.w;
-
-    window.G.map.collidePlatforms(entity);
-    if (entity.shootCooldown > 0) entity.shootCooldown -= dt;
+    // Регенерация
+    if (hasCard(en.id, 'regen')) {
+      en.regenTimer += dt / 60;
+      if (en.regenTimer >= 180) { en.regenTimer = 0; en.hp = Math.min(en.maxHp, en.hp + 1); }
+    } else { en.regenTimer = 0; }
 
     if (el) {
-      el.style.left = entity.x + 'px';
-      el.style.top = entity.y + 'px';
+      el.style.left = en.x + 'px';
+      el.style.top = en.y + 'px';
     }
   }
 
-  function update(dt, input1, input2) {
-    updateEntity(player1, dt, input1, elP1, elShield1);
-    if (input2) updateEntity(player2, dt, input2, elP2, elShield2);
+  function update(dt, i1, i2) {
+    updE(p1, dt, i1, e1, s1);
+    if (i2) updE(p2, dt, i2, e2, s2);
   }
 
   function reset() {
-    player1.x = player1.spawnX;
-    player1.y = 380;
-    player1.vx = 0; player1.vy = 0;
-    player1.hp = player1.maxHp;
-    player1.blocking = false;
-    player1.shootCooldown = 0;
-    player1.facing = player1.spawnFacing;
-    player1.onGround = false;
-    player1.shieldTimer = 0;
-    player1.shieldCooldown = 0;
-
-    player2.x = player2.spawnX;
-    player2.y = 380;
-    player2.vx = 0; player2.vy = 0;
-    player2.hp = player2.maxHp;
-    player2.blocking = false;
-    player2.shootCooldown = 0;
-    player2.facing = player2.spawnFacing;
-    player2.onGround = false;
-    player2.shieldTimer = 0;
-    player2.shieldCooldown = 0;
+    [p1, p2].forEach(function(p) {
+      p.x = p.spawnX; p.y = 380; p.vx = 0; p.vy = 0;
+      p.hp = p.maxHp; p.blocking = false; p.shootCooldown = 0;
+      p.facing = p.spawnFacing; p.onGround = false;
+      p.shieldTimer = 0; p.shieldCooldown = 0;
+      p.jumpsLeft = 1; p.maxJumps = 1; p.regenTimer = 0;
+    });
   }
 
-  function getPlayers() { return { p1: player1, p2: player2 }; }
+  function getPlayers() { return { p1, p2 }; }
 
   window.G = window.G || {};
   window.G.player = { initPlayer, update, reset, getPlayers };

@@ -1,452 +1,73 @@
-/* styles.css — добавлены стили для иконки щита */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  -webkit-user-select: none;
-}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#0b0d17;font-family:'Arial',sans-serif;color:#fff;touch-action:none}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.hidden{display:none!important}
 
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: #0b0d17;
-  font-family: 'Arial', sans-serif;
-  color: #fff;
-  touch-action: none;
-}
+#menu-screen{position:relative;width:800px;max-width:95vw;padding:30px;background:linear-gradient(180deg,#1a1d2e 0%,#2d1b4e 100%);border:2px solid #6a4a9e;border-radius:12px;box-shadow:0 0 40px rgba(100,50,200,.5);z-index:10}
+#menu-title{text-align:center;font-size:42px;letter-spacing:4px;margin-bottom:30px;color:#a080ff;text-shadow:0 0 20px #a080ff,0 0 40px #ff00ff}
+.menu-section{margin-bottom:24px}
+.menu-label{font-size:14px;letter-spacing:2px;color:#bbb;margin-bottom:10px;text-transform:uppercase}
+.menu-options{display:flex;flex-wrap:wrap;gap:10px}
+.menu-option{flex:1 1 auto;min-width:110px;padding:12px 16px;background:#2d1b4e;color:#fff;border:2px solid #6a4a9e;border-radius:8px;font-size:14px;font-weight:bold;letter-spacing:1px;cursor:pointer;transition:.15s}
+.menu-option:hover{background:#3d2a5e}
+.menu-option.active{background:#6a4a9e;border-color:#a080ff;box-shadow:0 0 12px #a080ff}
+.menu-start{display:block;width:100%;padding:18px;margin-top:24px;background:linear-gradient(180deg,#8a6ade 0%,#6a4a9e 100%);color:#fff;border:2px solid #c0a0ff;border-radius:10px;font-size:20px;font-weight:bold;letter-spacing:3px;cursor:pointer;text-shadow:0 0 10px #fff}
+.menu-start:hover{background:linear-gradient(180deg,#9a7aee 0%,#7a5aae 100%)}
+.menu-small{display:block;width:100%;padding:10px;margin-top:12px;background:transparent;color:#bbb;border:1px solid #555;border-radius:6px;font-size:13px;cursor:pointer}
+.menu-small:hover{color:#fff;border-color:#999}
 
-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
+#game-area{position:relative;width:800px;height:500px;background:linear-gradient(180deg,#1a1d2e 0%,#2d1b4e 60%,#3d2a5e 100%);border:2px solid #444;border-radius:8px;overflow:hidden;box-shadow:0 0 40px rgba(100,50,200,.3)}
+#svg-layer{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2}
+#platforms{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.platform{position:absolute}
+#player,#bot{position:absolute;width:40px;height:60px;z-index:5;will-change:transform}
+#player{left:100px;top:380px}
+#bot{left:660px;top:380px}
+.shield{position:absolute;top:-10px;left:-10px;width:60px;height:80px;border:3px solid #00ffff;border-radius:50%;opacity:0;box-shadow:0 0 15px #00ffff;pointer-events:none;transition:opacity .1s}
+.shield.active{opacity:.8}
+#hp-player-wrap,#hp-bot-wrap{position:absolute;top:15px;width:220px;height:22px;background:#1a1a1a;border:2px solid #555;border-radius:4px;z-index:10;overflow:hidden}
+#hp-player-wrap{left:15px}
+#hp-bot-wrap{right:15px}
+#hp-player-bar{height:100%;width:100%;background:linear-gradient(90deg,#3498db,#5dade2);transition:width .2s linear}
+#hp-bot-bar{height:100%;width:100%;background:linear-gradient(90deg,#e74c3c,#f1948a);transition:width .2s linear;float:right}
+#score-board{position:absolute;top:15px;left:50%;transform:translateX(-50%);font-size:28px;font-weight:bold;text-shadow:0 0 8px #000;z-index:10;letter-spacing:2px}
 
-.hidden { display: none !important; }
+.shield-icon{position:absolute;width:32px;height:32px;z-index:11;opacity:.3;transition:opacity .2s;display:flex;align-items:center;justify-content:center}
+.shield-icon.ready{opacity:1}
+.shield-icon.active{opacity:1;animation:shieldPulse .5s infinite alternate}
+.shield-icon.cooldown{opacity:.5}
+.shield-icon.cooldown svg{opacity:.4}
+.shield-icon span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:14px;font-weight:bold;color:#fff;text-shadow:0 0 4px #000}
+@keyframes shieldPulse{from{transform:scale(1)}to{transform:scale(1.1)}}
+#shield-icon-p1{top:42px;left:15px}
+#shield-icon-p2{top:42px;right:15px}
 
-/* ===== МЕНЮ ВЫБОРА ===== */
-#menu-screen {
-  position: relative;
-  width: 800px;
-  max-width: 95vw;
-  padding: 30px;
-  background: linear-gradient(180deg, #1a1d2e 0%, #2d1b4e 100%);
-  border: 2px solid #6a4a9e;
-  border-radius: 12px;
-  box-shadow: 0 0 40px rgba(100, 50, 200, 0.5);
-  z-index: 10;
-}
+#round-overlay{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:20;opacity:0;pointer-events:none;transition:opacity .3s}
+#round-overlay.show{opacity:1}
+#round-text{font-size:48px;font-weight:bold;color:#fff;text-shadow:0 0 20px #ff00ff,0 0 10px #00ffff;letter-spacing:3px}
 
-#menu-title {
-  text-align: center;
-  font-size: 42px;
-  letter-spacing: 4px;
-  margin-bottom: 30px;
-  color: #a080ff;
-  text-shadow: 0 0 20px #a080ff, 0 0 40px #ff00ff;
-}
+#mobile-controls{position:absolute;bottom:80px;left:0;right:0;display:flex;justify-content:space-between;padding:0 30px;pointer-events:none;z-index:30}
+.joystick{position:relative;width:120px;height:120px;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.3);border-radius:50%;pointer-events:auto;touch-action:none}
+.joy-knob{position:absolute;top:50%;left:50%;width:50px;height:50px;margin:-25px 0 0 -25px;background:rgba(255,255,255,.4);border:2px solid rgba(255,255,255,.6);border-radius:50%;pointer-events:none}
 
-.menu-section { margin-bottom: 24px; }
+#bottom-buttons{display:flex;gap:12px;z-index:5}
+#bottom-buttons button{padding:10px 20px;background:#2d1b4e;color:#fff;border:2px solid #6a4a9e;border-radius:6px;font-size:14px;font-weight:bold;letter-spacing:1px;cursor:pointer}
+#bottom-buttons button:hover{background:#3d2a5e}
 
-.menu-label {
-  font-size: 14px;
-  letter-spacing: 2px;
-  color: #bbb;
-  margin-bottom: 10px;
-  text-transform: uppercase;
-}
+#settings-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:100}
+#settings-overlay.show{display:flex}
+#settings-panel{background:#1a1d2e;border:2px solid #6a4a9e;border-radius:12px;padding:30px;min-width:320px;box-shadow:0 0 40px rgba(100,50,200,.5)}
+#settings-title{text-align:center;margin-bottom:24px;font-size:24px;color:#a080ff;letter-spacing:2px}
+.setting-row{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.setting-row label{min-width:100px;font-size:14px;color:#ddd}
+.setting-row input[type="checkbox"]{width:20px;height:20px;accent-color:#8a6ade;cursor:pointer}
+.setting-row input[type="range"]{flex:1;accent-color:#8a6ade;cursor:pointer}
+.setting-row select{flex:1;background:#2d1b4e;color:#fff;border:1px solid #6a4a9e;border-radius:4px;padding:6px 10px;font-size:13px;cursor:pointer}
+#btn-close-settings{display:block;width:100%;margin-top:20px;padding:10px;background:#4a3a7e;color:#fff;border:2px solid #8a6ade;border-radius:6px;font-size:14px;font-weight:bold;letter-spacing:1px;cursor:pointer}
+#btn-close-settings:hover{background:#5a4a8e}
 
-.menu-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.menu-option {
-  flex: 1 1 auto;
-  min-width: 110px;
-  padding: 12px 16px;
-  background: #2d1b4e;
-  color: #fff;
-  border: 2px solid #6a4a9e;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: bold;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.menu-option:hover { background: #3d2a5e; }
-
-.menu-option.active {
-  background: #6a4a9e;
-  border-color: #a080ff;
-  box-shadow: 0 0 12px #a080ff;
-}
-
-.menu-start {
-  display: block;
-  width: 100%;
-  padding: 18px;
-  margin-top: 24px;
-  background: linear-gradient(180deg, #8a6ade 0%, #6a4a9e 100%);
-  color: #fff;
-  border: 2px solid #c0a0ff;
-  border-radius: 10px;
-  font-size: 20px;
-  font-weight: bold;
-  letter-spacing: 3px;
-  cursor: pointer;
-  text-shadow: 0 0 10px #fff;
-}
-
-.menu-start:hover { background: linear-gradient(180deg, #9a7aee 0%, #7a5aae 100%); }
-
-.menu-small {
-  display: block;
-  width: 100%;
-  padding: 10px;
-  margin-top: 12px;
-  background: transparent;
-  color: #bbb;
-  border: 1px solid #555;
-  border-radius: 6px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.menu-small:hover { color: #fff; border-color: #999; }
-
-/* ===== ИГРОВОЕ ПОЛЕ ===== */
-#game-area {
-  position: relative;
-  width: 800px;
-  height: 500px;
-  background: linear-gradient(180deg, #1a1d2e 0%, #2d1b4e 60%, #3d2a5e 100%);
-  border: 2px solid #444;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 0 40px rgba(100, 50, 200, 0.3);
-}
-
-#svg-layer {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  pointer-events: none;
-  z-index: 2;
-}
-
-#platforms {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.platform { position: absolute; }
-
-#player, #bot {
-  position: absolute;
-  width: 40px;
-  height: 60px;
-  z-index: 5;
-  will-change: transform;
-}
-
-#player { left: 100px; top: 380px; }
-#bot { left: 660px; top: 380px; }
-
-.shield {
-  position: absolute;
-  top: -10px; left: -10px;
-  width: 60px; height: 80px;
-  border: 3px solid #00ffff;
-  border-radius: 50%;
-  opacity: 0;
-  box-shadow: 0 0 15px #00ffff;
-  pointer-events: none;
-  transition: opacity 0.1s;
-}
-
-.shield.active { opacity: 0.8; }
-
-#hp-player-wrap, #hp-bot-wrap {
-  position: absolute;
-  top: 15px;
-  width: 220px;
-  height: 22px;
-  background: #1a1a1a;
-  border: 2px solid #555;
-  border-radius: 4px;
-  z-index: 10;
-  overflow: hidden;
-}
-
-#hp-player-wrap { left: 15px; }
-#hp-bot-wrap { right: 15px; }
-
-#hp-player-bar {
-  height: 100%;
-  width: 100%;
-  background: linear-gradient(90deg, #3498db, #5dade2);
-  transition: width 0.2s linear;
-}
-
-#hp-bot-bar {
-  height: 100%;
-  width: 100%;
-  background: linear-gradient(90deg, #e74c3c, #f1948a);
-  transition: width 0.2s linear;
-  float: right;
-}
-
-#score-board {
-  position: absolute;
-  top: 15px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 28px;
-  font-weight: bold;
-  text-shadow: 0 0 8px #000;
-  z-index: 10;
-  letter-spacing: 2px;
-}
-
-/* ===== ИКОНКИ ЩИТА ===== */
-.shield-icon {
-  position: absolute;
-  width: 32px;
-  height: 32px;
-  z-index: 11;
-  opacity: 0.3;
-  transition: opacity 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.shield-icon.ready {
-  opacity: 1;
-}
-
-.shield-icon.active {
-  opacity: 1;
-  animation: shieldPulse 0.5s infinite alternate;
-}
-
-.shield-icon.cooldown {
-  opacity: 0.5;
-}
-
-.shield-icon.cooldown svg {
-  opacity: 0.4;
-}
-
-.shield-icon span {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 14px;
-  font-weight: bold;
-  color: #fff;
-  text-shadow: 0 0 4px #000;
-}
-
-@keyframes shieldPulse {
-  from { transform: scale(1); }
-  to { transform: scale(1.1); }
-}
-
-#shield-icon-p1 {
-  top: 42px;
-  left: 15px;
-}
-
-#shield-icon-p2 {
-  top: 42px;
-  right: 15px;
-}
-
-#round-overlay {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.55);
-  z-index: 20;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-
-#round-overlay.show { opacity: 1; }
-
-#round-text {
-  font-size: 48px;
-  font-weight: bold;
-  color: #fff;
-  text-shadow: 0 0 20px #ff00ff, 0 0 10px #00ffff;
-  letter-spacing: 3px;
-}
-
-/* ===== МОБИЛЬНЫЕ ДЖОЙСТИКИ ===== */
-#mobile-controls {
-  position: absolute;
-  bottom: 80px;
-  left: 0; right: 0;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 30px;
-  pointer-events: none;
-  z-index: 30;
-}
-
-.joystick {
-  position: relative;
-  width: 120px;
-  height: 120px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  pointer-events: auto;
-  touch-action: none;
-}
-
-.joy-knob {
-  position: absolute;
-  top: 50%; left: 50%;
-  width: 50px; height: 50px;
-  margin: -25px 0 0 -25px;
-  background: rgba(255, 255, 255, 0.4);
-  border: 2px solid rgba(255, 255, 255, 0.6);
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-/* ===== НИЖНИЕ КНОПКИ ===== */
-#bottom-buttons {
-  display: flex;
-  gap: 12px;
-  z-index: 5;
-}
-
-#bottom-buttons button {
-  padding: 10px 20px;
-  background: #2d1b4e;
-  color: #fff;
-  border: 2px solid #6a4a9e;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: bold;
-  letter-spacing: 1px;
-  cursor: pointer;
-}
-
-#bottom-buttons button:hover { background: #3d2a5e; }
-
-/* ===== ОКНО НАСТРОЕК ===== */
-#settings-overlay {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-#settings-overlay.show { display: flex; }
-
-#settings-panel {
-  background: #1a1d2e;
-  border: 2px solid #6a4a9e;
-  border-radius: 12px;
-  padding: 30px;
-  min-width: 320px;
-  box-shadow: 0 0 40px rgba(100, 50, 200, 0.5);
-}
-
-#settings-title {
-  text-align: center;
-  margin-bottom: 24px;
-  font-size: 24px;
-  color: #a080ff;
-  letter-spacing: 2px;
-}
-
-.setting-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.setting-row label {
-  min-width: 100px;
-  font-size: 14px;
-  color: #ddd;
-}
-
-.setting-row input[type="checkbox"] {
-  width: 20px; height: 20px;
-  accent-color: #8a6ade;
-  cursor: pointer;
-}
-
-.setting-row input[type="range"] {
-  flex: 1;
-  accent-color: #8a6ade;
-  cursor: pointer;
-}
-
-.setting-row select {
-  flex: 1;
-  background: #2d1b4e;
-  color: #fff;
-  border: 1px solid #6a4a9e;
-  border-radius: 4px;
-  padding: 6px 10px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-#btn-close-setting {
-  display: block;
-  width: 100%;
-  margin-top: 20px;
-  padding: 10px;
-  background: #4a3a7e;
-  color: #fff;
-  border: 2px solid #8a6ade;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: bold;
-  letter-spacing: 1px;
-  cursor: pointer;
-}
-
-#btn-close-setting:hover { background: #5a4a8e; }
-
-@media (max-width: 820px) {
-  #game-area {
-    width: 100vw;
-    height: 55vh;
-    max-height: 500px;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-  }
-  #menu-screen { padding: 20px; }
-  #menu-title { font-size: 32px; }
+@media(max-width:820px){
+  #game-area{width:100vw;height:55vh;max-height:500px;border-radius:0;border-left:none;border-right:none}
+  #menu-screen{padding:20px}
+  #menu-title{font-size:32px}
 }

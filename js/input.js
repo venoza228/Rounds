@@ -1,174 +1,193 @@
-// js/input.js
 (function() {
   const keys = {};
-  const justPressed = {};
-
+  const jp = {};
   const joy = {
-    left: { active: false, dx: 0, dy: 0, tapStart: 0, startX: 0, startY: 0, el: null, knob: null, blockTriggered: false },
-    right: { active: false, dx: 0, dy: 0, tapStart: 0, startX: 0, startY: 0, el: null, knob: null, blockTriggered: false }
+    left: { a: false, dx: 0, dy: 0, ts: 0, bt: false, jt: false, el: null, kn: null },
+    right: { a: false, dx: 0, dy: 0, ts: 0, bt: false, jt: false, el: null, kn: null }
   };
-
-  const tapCallbacks = { left: null, right: null };
+  const tapCb = { left: null, right: null };
 
   function initInput() {
-    document.addEventListener('keydown', onKeyDown);
-    document.addEventListener('keyup', onKeyUp);
+    document.addEventListener('keydown', kd);
+    document.addEventListener('keyup', ku);
   }
 
-  function onKeyDown(e) {
-    const key = e.key.toLowerCase();
-    if (!keys[key]) {
-      justPressed[key] = true;
-    }
-    keys[key] = true;
-    if (key === 'escape') {
-      document.dispatchEvent(new CustomEvent('toggleSettings'));
+  function kd(e) {
+    const k = e.key.toLowerCase();
+    if (!keys[k]) jp[k] = true;
+    keys[k] = true;
+    if (k === 'escape') {
+      const ev = new CustomEvent('toggleSettings');
+      document.dispatchEvent(ev);
     }
   }
 
-  function onKeyUp(e) {
+  function ku(e) {
     keys[e.key.toLowerCase()] = false;
   }
 
   function clearJustPressed() {
-    for (const key in justPressed) {
-      delete justPressed[key];
-    }
+    for (const k in jp) delete jp[k];
+    joy.left.jt = false;
+    joy.right.jt = false;
+    joy.left.bt = false;
+    joy.right.bt = false;
   }
 
-  function setupJoystick(side, el, knob, tapCb) {
+  function setupJoystick(side, el, kn, cb) {
+    if (!el) return;
     joy[side].el = el;
-    joy[side].knob = knob;
-    tapCallbacks[side] = tapCb;
-
-    el.addEventListener('touchstart', function(e) { onJoyStart(e, side); }, { passive: false });
-    el.addEventListener('touchmove', function(e) { onJoyMove(e, side); }, { passive: false });
-    el.addEventListener('touchend', function(e) { onJoyEnd(e, side); }, { passive: false });
-    el.addEventListener('mousedown', function(e) { onJoyStart(e, side); });
-    document.addEventListener('mousemove', function(e) { onJoyMove(e, side); });
-    document.addEventListener('mouseup', function(e) { onJoyEnd(e, side); });
+    joy[side].kn = kn;
+    tapCb[side] = cb;
+    el.addEventListener('touchstart', function(e) { e.preventDefault(); js(e, side); }, { passive: false });
+    el.addEventListener('touchmove', function(e) { e.preventDefault(); jm(e, side); }, { passive: false });
+    el.addEventListener('touchend', function(e) { e.preventDefault(); je(e, side); }, { passive: false });
   }
 
-  function onJoyStart(e, side) {
-    e.preventDefault();
-    const j = joy[side];
-    j.active = true;
-    j.tapStart = Date.now();
-    j.blockTriggered = false;
-    const touch = e.touches ? e.touches[0] : e;
-    j.startX = touch.clientX;
-    j.startY = touch.clientY;
-    updateJoy(e, side);
+  function js(e, s) {
+    const j = joy[s];
+    j.a = true;
+    j.ts = Date.now();
+    j.bt = false;
+    j.jt = false;
+    upd(e, s);
   }
 
-  function onJoyMove(e, side) {
-    if (!joy[side].active) return;
+  function jm(e, s) {
+    if (!joy[s].a) return;
     e.preventDefault();
-    updateJoy(e, side);
+    upd(e, s);
   }
 
-  function onJoyEnd(e, side) {
+  function je(e, s) {
     e.preventDefault();
-    const j = joy[side];
-    const held = Date.now() - j.tapStart;
-    const dist = Math.sqrt(j.dx * j.dx + j.dy * j.dy);
-
-    if (held < 200 && dist < 0.3 && tapCallbacks[side]) {
-      tapCallbacks[side]();
-    }
-
-    j.active = false;
+    const j = joy[s];
+    const h = Date.now() - j.ts;
+    const d = Math.sqrt(j.dx * j.dx + j.dy * j.dy);
+    if (h < 200 && d < 0.3 && tapCb[s]) tapCb[s]();
+    j.a = false;
     j.dx = 0;
     j.dy = 0;
-    j.blockTriggered = false;
-    if (j.knob) {
-      j.knob.style.left = '50%';
-      j.knob.style.top = '50%';
+    j.bt = false;
+    j.jt = false;
+    if (j.kn) {
+      j.kn.style.left = '50%';
+      j.kn.style.top = '50%';
     }
   }
 
-  function updateJoy(e, side) {
-    const j = joy[side];
-    if (!j.el || !j.knob) return;
-    const rect = j.el.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const touch = e.touches ? e.touches[0] : e;
-    let dx = touch.clientX - cx;
-    let dy = touch.clientY - cy;
-    const max = rect.width / 2 - 25;
+  function upd(e, s) {
+    const j = joy[s];
+    if (!j.el || !j.kn) return;
+    const r = j.el.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const t = e.touches ? e.touches[0] : e;
+    let dx = t.clientX - cx;
+    let dy = t.clientY - cy;
+    const mx = r.width / 2 - 25;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist > max) {
-      dx = dx / dist * max;
-      dy = dy / dist * max;
+    if (dist > mx) {
+      dx = dx / dist * mx;
+      dy = dy / dist * mx;
     }
-    j.dx = dx / max;
-    j.dy = dy / max;
-    j.knob.style.left = (50 + (dx / rect.width * 100)) + '%';
-    j.knob.style.top = (50 + (dy / rect.height * 100)) + '%';
+    j.dx = dx / mx;
+    j.dy = dy / mx;
+    j.kn.style.left = (50 + (dx / r.width * 100)) + '%';
+    j.kn.style.top = (50 + (dy / r.height * 100)) + '%';
   }
 
-  function isLeft1() {
-    const s = window.G.settings.getSettings();
-    if (s.controlScheme === 'arrows') return !!keys['arrowleft'];
-    return !!keys['a'] || (joy.left.active && joy.left.dx < -0.3);
-  }
-  function isRight1() {
-    const s = window.G.settings.getSettings();
-    if (s.controlScheme === 'arrows') return !!keys['arrowright'];
-    return !!keys['d'] || (joy.left.active && joy.left.dx > 0.3);
-  }
-  function isJump1() {
-    const s = window.G.settings.getSettings();
-    if (s.controlScheme === 'arrows') return !!keys['arrowup'];
-    return !!keys['w'] || (joy.left.active && joy.left.dy < -0.5);
-  }
-  function isBlockPressed1() {
-    const s = window.G.settings.getSettings();
-    let pressed = false;
-    if (s.controlScheme === 'arrows') {
-      pressed = !!justPressed['arrowdown'];
-    } else {
-      pressed = !!justPressed['s'];
-    }
-    // Джойстик: вниз
-    if (!pressed && joy.left.active && joy.left.dy > 0.5 && !joy.left.blockTriggered) {
-      joy.left.blockTriggered = true;
-      pressed = true;
-    }
-    return pressed;
-  }
-  function isShoot1() {
-    const s = window.G.settings.getSettings();
-    if (s.controlScheme === 'arrows') return !!keys['ю'] || !!keys['.'];
-    return !!keys['e'];
+  // ========== ИГРОК 1 ==========
+  function iL1() {
+    return !!keys['a'] || !!keys['ф'] || (joy.left.a && joy.left.dx < -0.3);
   }
 
-  function isLeft2() {
-    return !!keys['arrowleft'] || (joy.right.active && joy.right.dx < -0.3);
+  function iR1() {
+    return !!keys['d'] || !!keys['в'] || (joy.left.a && joy.left.dx > 0.3);
   }
-  function isRight2() {
-    return !!keys['arrowright'] || (joy.right.active && joy.right.dx > 0.3);
+
+  function iJ1() {
+    return !!keys['w'] || !!keys['ц'] || (joy.left.a && joy.left.dy < -0.5);
   }
-  function isJump2() {
-    return !!keys['arrowup'] || (joy.right.active && joy.right.dy < -0.5);
-  }
-  function isBlockPressed2() {
-    let pressed = !!justPressed['arrowdown'];
-    if (!pressed && joy.right.active && joy.right.dy > 0.5 && !joy.right.blockTriggered) {
-      joy.right.blockTriggered = true;
-      pressed = true;
+
+  function iJJ1() {
+    let p = !!jp['w'] || !!jp['ц'];
+    if (!p && joy.left.a && joy.left.dy < -0.5 && !joy.left.jt) {
+      joy.left.jt = true;
+      p = true;
     }
-    return pressed;
-  }
-  function isShoot2() {
-    return !!keys['ю'] || !!keys['.'];
+    return p;
   }
 
-  const input1 = { isLeft: isLeft1, isRight: isRight1, isJump: isJump1, isBlockPressed: isBlockPressed1, isShoot: isShoot1 };
-  const input2 = { isLeft: isLeft2, isRight: isRight2, isJump: isJump2, isBlockPressed: isBlockPressed2, isShoot: isShoot2 };
+  function iB1() {
+    // Щит на S (английская) или Ы (русская)
+    let p = !!jp['s'] || !!jp['ы'];
+    if (!p && joy.left.a && joy.left.dy > 0.5 && !joy.left.bt) {
+      joy.left.bt = true;
+      p = true;
+    }
+    return p;
+  }
 
-  function triggerShoot1() {
+  function iS1() {
+    // Огонь на E (английская) или У (русская)
+    return !!keys['e'] || !!keys['у'];
+  }
+
+  // ========== ИГРОК 2 ==========
+  function iL2() {
+    return !!keys['arrowleft'] || (joy.right.a && joy.right.dx < -0.3);
+  }
+
+  function iR2() {
+    return !!keys['arrowright'] || (joy.right.a && joy.right.dx > 0.3);
+  }
+
+  function iJ2() {
+    return !!keys['arrowup'] || (joy.right.a && joy.right.dy < -0.5);
+  }
+
+  function iJJ2() {
+    let p = !!jp['arrowup'];
+    if (!p && joy.right.a && joy.right.dy < -0.5 && !joy.right.jt) {
+      joy.right.jt = true;
+      p = true;
+    }
+    return p;
+  }
+
+  function iB2() {
+    let p = !!jp['arrowdown'];
+    if (!p && joy.right.a && joy.right.dy > 0.5 && !joy.right.bt) {
+      joy.right.bt = true;
+      p = true;
+    }
+    return p;
+  }
+
+  function iS2() {
+    return !!keys['ю'] || !!keys['.'] || !!keys['/'];
+  }
+
+  const input1 = {
+    isLeft: iL1,
+    isRight: iR1,
+    isJump: iJ1,
+    isJumpJustPressed: iJJ1,
+    isBlockPressed: iB1,
+    isShoot: iS1
+  };
+
+  const input2 = {
+    isLeft: iL2,
+    isRight: iR2,
+    isJump: iJ2,
+    isJumpJustPressed: iJJ2,
+    isBlockPressed: iB2,
+    isShoot: iS2
+  };
+
+  function ts1() {
     if (window.G.player) {
       const p = window.G.player.getPlayers().p1;
       if (p.shootCooldown <= 0) {
@@ -181,7 +200,7 @@
     }
   }
 
-  function triggerShoot2() {
+  function ts2() {
     if (window.G.player) {
       const p = window.G.player.getPlayers().p2;
       if (p.shootCooldown <= 0) {
@@ -196,6 +215,12 @@
 
   window.G = window.G || {};
   window.G.input = {
-    initInput, setupJoystick, input1, input2, triggerShoot1, triggerShoot2, clearJustPressed
+    initInput: initInput,
+    setupJoystick: setupJoystick,
+    input1: input1,
+    input2: input2,
+    triggerShoot1: ts1,
+    triggerShoot2: ts2,
+    clearJustPressed: clearJustPressed
   };
 })();

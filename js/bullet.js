@@ -1,96 +1,172 @@
-// js/bullet.js
 (function() {
-  const BULLET_SPEED = 8;
-  const DAMAGE = 10;
-  const DAMAGE_BLOCK = 5;
-  const GAME_W = 800;
-  const GAME_H = 500;
-
+  const SPD = 8;
+  const DMG = 10;
+  const W = 800;
+  const H = 500;
   let bullets = [];
-  let elSvgLayer = null;
+  let mines = [];
+  let svg = null;
 
-  function initBullets(svg) { elSvgLayer = svg; }
+  function initBullets(s) { svg = s; }
 
-  function createBullet(owner, x, y, dir, miss) {
-    const vx = dir * BULLET_SPEED;
-    const vy = miss ? (Math.random() - 0.5) * 6 : 0;
-
-    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    circle.setAttribute('cx', x + 4);
-    circle.setAttribute('cy', y + 4);
-    circle.setAttribute('r', '4');
-    circle.setAttribute('fill', owner === 'player1' ? '#5dade2' : '#f1948a');
-
-    const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    glow.setAttribute('cx', x + 4);
-    glow.setAttribute('cy', y + 4);
-    glow.setAttribute('r', '6');
-    glow.setAttribute('fill', 'none');
-    glow.setAttribute('stroke', owner === 'player1' ? '#5dade2' : '#f1948a');
-    glow.setAttribute('stroke-width', '2');
-    glow.setAttribute('opacity', '0.5');
-
-    elSvgLayer.appendChild(glow);
-    elSvgLayer.appendChild(circle);
-    bullets.push({ x: x, y: y, vx: vx, vy: vy, owner: owner, circle: circle, glow: glow });
+  function createBullet(o, x, y, d, m) {
+    const vx = d * SPD;
+    const vy = m ? (Math.random() - 0.5) * 4 : 0;
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', x + 4); c.setAttribute('cy', y + 4); c.setAttribute('r', '4');
+    c.setAttribute('fill', o === 'player1' ? '#5dade2' : '#f1948a');
+    svg.appendChild(c);
+    bullets.push({ x, y, vx, vy, o, c, bounced: false });
   }
 
-  function checkHit(b, target) {
-    return b.x > target.x && b.x < target.x + target.w &&
-           b.y > target.y && b.y < target.y + target.h;
+  function createMine(o, x, y) {
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    c.setAttribute('x', x); c.setAttribute('y', y); c.setAttribute('width', '12'); c.setAttribute('height', '12');
+    c.setAttribute('fill', o === 'player1' ? '#ff0' : '#f0f');
+    svg.appendChild(c);
+    mines.push({ x, y, w: 12, h: 12, o, c });
   }
 
-  function checkShieldHit(b, target) {
-    return b.x > target.x - 15 && b.x < target.x + target.w + 15 &&
-           b.y > target.y - 10 && b.y < target.y + target.h + 10;
+  function hasCard(playerId, cardId) {
+    if (window.G.cards && window.G.cards.getPlayerCards) {
+      const cards = window.G.cards.getPlayerCards(playerId);
+      for (let i = 0; i < cards.length; i++) { if (cards[i].id === cardId) return true; }
+    }
+    return false;
   }
+
+  function hit(b, t) { return b.x > t.x && b.x < t.x + t.w && b.y > t.y && b.y < t.y + t.h; }
 
   function updateBullets(dt, fighters) {
+    // Пули
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i];
       b.x += b.vx * dt;
       b.y += b.vy * dt;
-      b.circle.setAttribute('cx', b.x + 4);
-      b.circle.setAttribute('cy', b.y + 4);
-      b.glow.setAttribute('cx', b.x + 4);
-      b.glow.setAttribute('cy', b.y + 4);
+      b.c.setAttribute('cx', b.x + 4);
+      b.c.setAttribute('cy', b.y + 4);
 
-      let remove = b.x < -10 || b.x > GAME_W + 10 || b.y < -10 || b.y > GAME_H + 10;
-
-      for (let f = 0; f < fighters.length; f++) {
-        const target = fighters[f];
-        if (remove || target.id === b.owner) continue;
-        if (!target.blocking && checkHit(b, target)) {
-          target.hp -= DAMAGE;
-          if (target.hp < 0) target.hp = 0;
-          window.G.ui.createHitEffect(b.x, b.y, b.owner === 'player1' ? '#5dade2' : '#f1948a');
-          window.G.audio.playHit();
-          remove = true;
-        } else if (target.blocking && checkShieldHit(b, target)) {
-          target.hp -= DAMAGE_BLOCK;
-          if (target.hp < 0) target.hp = 0;
-          window.G.ui.createHitEffect(b.x, b.y, '#00ffff');
-          window.G.audio.playBlock();
-          remove = true;
+      // Самонаводка
+      if (hasCard(b.o, 'homing')) {
+        const target = b.o === 'player1' ? fighters.find(f => f.id === 'player2') : fighters.find(f => f.id === 'player1');
+        if (target) {
+          const dx = target.x + target.w/2 - b.x;
+          const dy = target.y + target.h/2 - b.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist > 0) { b.vx += dx/dist * 0.3; b.vy += dy/dist * 0.3; }
         }
       }
 
-      if (remove) {
-        if (b.circle.parentNode) elSvgLayer.removeChild(b.circle);
-        if (b.glow.parentNode) elSvgLayer.removeChild(b.glow);
+      // Гравитационный колодец — притягивает врага
+      if (hasCard(b.o, 'gravity')) {
+        const target = b.o === 'player1' ? fighters.find(f => f.id === 'player2') : fighters.find(f => f.id === 'player1');
+        if (target && Math.abs(b.x - target.x) < 80 && Math.abs(b.y - target.y) < 80) {
+          target.x += (b.x - target.x) * 0.02 * dt;
+          target.y += (b.y - target.y) * 0.02 * dt;
+        }
+      }
+
+      // Отскок от стен
+      if (hasCard(b.o, 'bounce') && !b.bounced) {
+        if (b.x < 0 || b.x > W) { b.vx *= -1; b.bounced = true; }
+        if (b.y < 0 || b.y > H) { b.vy *= -1; b.bounced = true; }
+      }
+
+      let rem = b.x < -20 || b.x > W + 20 || b.y < -20 || b.y > H + 20;
+
+      for (let f = 0; f < fighters.length; f++) {
+        const t = fighters[f];
+        if (rem || t.id === b.o) continue;
+        if (hit(b, t)) {
+          const sh = t.shieldTimer > 0;
+          if (sh) {
+            window.G.ui.createHitEffect(b.x, b.y, '#00ffff');
+            window.G.audio.playBlock();
+            if (hasCard(t.id, 'spikes')) {
+              const attacker = fighters.find(ff => ff.id === b.o);
+              if (attacker) { attacker.hp -= 5; if (attacker.hp < 0) attacker.hp = 0; }
+            }
+          } else {
+            let dmg = DMG;
+            if (hasCard(b.o, 'heavy')) dmg += 5;
+            if (hasCard(b.o, 'berserk')) {
+              const shooter = fighters.find(ff => ff.id === b.o);
+              if (shooter && shooter.hp < shooter.maxHp * 0.3) dmg = Math.floor(dmg * 1.5);
+            }
+            if (hasCard(t.id, 'thickskin')) dmg = Math.floor(dmg * 0.8);
+
+            t.hp -= dmg;
+            if (t.hp < 0) t.hp = 0;
+            window.G.ui.createHitEffect(b.x, b.y, b.o === 'player1' ? '#5dade2' : '#f1948a');
+            window.G.audio.playHit();
+
+            // Вампиризм
+            if (hasCard(b.o, 'vampire')) {
+              const shooter = fighters.find(ff => ff.id === b.o);
+              if (shooter) shooter.hp = Math.min(shooter.maxHp, shooter.hp + 3);
+            }
+            // Ядовитые пули
+            if (hasCard(b.o, 'poison')) t.poisonTimer = 180;
+            // Заморозка
+            if (hasCard(b.o, 'freeze') && !t.freezeTimer) {
+              t.freezeTimer = 60; // 1 секунда
+            }
+            // Взрывная пуля
+            if (hasCard(b.o, 'explosive')) {
+              for (let ff = 0; ff < fighters.length; ff++) {
+                const ft = fighters[ff];
+                if (ft.id !== b.o && Math.abs(ft.x - b.x) < 50 && Math.abs(ft.y - b.y) < 50) {
+                  ft.hp -= 5; if (ft.hp < 0) ft.hp = 0;
+                  window.G.ui.createHitEffect(ft.x + ft.w/2, ft.y + ft.h/2, '#ff0');
+                }
+              }
+            }
+          }
+          rem = true;
+          break;
+        }
+      }
+
+      if (rem) {
+        if (b.c.parentNode) svg.removeChild(b.c);
         bullets.splice(i, 1);
+      }
+    }
+
+    // Мины
+    for (let i = mines.length - 1; i >= 0; i--) {
+      const m = mines[i];
+      for (let f = 0; f < fighters.length; f++) {
+        const t = fighters[f];
+        if (t.id !== m.o && hit(m, t)) {
+          t.hp -= 15; if (t.hp < 0) t.hp = 0;
+          window.G.ui.createHitEffect(m.x, m.y, '#ff0');
+          window.G.audio.playHit();
+          if (m.c.parentNode) svg.removeChild(m.c);
+          mines.splice(i, 1);
+          break;
+        }
+      }
+    }
+
+    // Яд
+    for (let f = 0; f < fighters.length; f++) {
+      const t = fighters[f];
+      if (t.poisonTimer > 0) {
+        t.poisonTimer -= dt;
+        if (Math.floor(t.poisonTimer) % 60 === 0) {
+          t.hp -= 2; if (t.hp < 0) t.hp = 0;
+        }
       }
     }
   }
 
   function clearBullets() {
-    for (let i = 0; i < bullets.length; i++) {
-      if (bullets[i].circle.parentNode) elSvgLayer.removeChild(bullets[i].circle);
-      if (bullets[i].glow.parentNode) elSvgLayer.removeChild(bullets[i].glow);
-    }
-    bullets = [];
+    for (let i = 0; i < bullets.length; i++) { if (bullets[i].c.parentNode) svg.removeChild(bullets[i].c); }
+    for (let i = 0; i < mines.length; i++) { if (mines[i].c.parentNode) svg.removeChild(mines[i].c); }
+    bullets = []; mines = [];
   }
 
   window.G = window.G || {};
-  window.G.bullet = { initBullets, createBullet, updateBullets, clearBullets };
+  window.G.bullet = { initBullets, createBullet, createMine, updateBullets, clearBullets };
 })();

@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -9,7 +8,6 @@
 </head>
 <body>
 
-<!-- МЕНЮ ВЫБОРА -->
 <div id="menu-screen">
   <h1 id="menu-title">ROUNDS ARENA</h1>
   <div class="menu-section">
@@ -33,103 +31,52 @@
   <button id="btn-menu-settings" class="menu-small">⚙ Настройки</button>
 </div>
 
-<!-- ИГРОВОЙ ЭКРАН -->
 <div id="game-area" class="hidden">
   <svg id="svg-layer" xmlns="http://www.w3.org/2000/svg"></svg>
-
   <div id="hp-player-wrap"><div id="hp-player-bar"></div></div>
   <div id="hp-bot-wrap"><div id="hp-bot-bar"></div></div>
   <div id="score-board"><span id="score-player">0</span> : <span id="score-bot">0</span></div>
 
-  <!-- Иконки щита -->
-  <div id="shield-icon-p1" class="shield-icon">
-    <svg viewBox="0 0 24 24" width="28" height="28">
-      <path d="M12 2L4 6v6c0 5 3.5 9.7 8 11 4.5-1.3 8-6 8-11V6l-8-4z" fill="#00ffff"/>
-    </svg>
-    <span id="shield-timer-p1"></span>
-  </div>
-  <div id="shield-icon-p2" class="shield-icon">
-    <svg viewBox="0 0 24 24" width="28" height="28">
-      <path d="M12 2L4 6v6c0 5 3.5 9.7 8 11 4.5-1.3 8-6 8-11V6l-8-4z" fill="#00ffff"/>
-    </svg>
-    <span id="shield-timer-p2"></span>
-  </div>
+  <div id="shield-icon-p1" class="shield-icon"><svg viewBox="0 0 24 24" width="28" height="28"><path d="M12 2L4 6v6c0 5 3.5 9.7 8 11 4.5-1.3 8-6 8-11V6l-8-4z" fill="#00ffff"/></svg><span id="shield-timer-p1"></span></div>
+  <div id="shield-icon-p2" class="shield-icon"><svg viewBox="0 0 24 24" width="28" height="28"><path d="M12 2L4 6v6c0 5 3.5 9.7 8 11 4.5-1.3 8-6 8-11V6l-8-4z" fill="#00ffff"/></svg><span id="shield-timer-p2"></span></div>
 
   <div id="platforms"></div>
 
   <div id="player">
-    <svg viewBox="0 0 40 60" width="40" height="60">
-      <circle cx="20" cy="12" r="10" fill="#3498db"/>
-      <rect x="10" y="22" width="20" height="25" fill="#2980b9"/>
-      <rect x="5" y="25" width="6" height="20" fill="#3498db"/>
-      <rect x="29" y="25" width="6" height="20" fill="#3498db"/>
-      <rect x="12" y="47" width="7" height="13" fill="#2c3e50"/>
-      <rect x="21" y="47" width="7" height="13" fill="#2c3e50"/>
-    </svg>
+    <svg viewBox="0 0 40 60" width="40" height="60"><circle cx="20" cy="12" r="10" fill="#3498db"/><rect x="10" y="22" width="20" height="25" fill="#2980b9"/><rect x="5" y="25" width="6" height="20" fill="#3498db"/><rect x="29" y="25" width="6" height="20" fill="#3498db"/><rect x="12" y="47" width="7" height="13" fill="#2c3e50"/><rect x="21" y="47" width="7" height="13" fill="#2c3e50"/></svg>
     <div id="player-shield" class="shield"></div>
   </div>
 
   <div id="bot">
-    <svg viewBox="0 0 40 60" width="40" height="60">
-      <circle cx="20" cy="12" r="10" fill="#e74c3c"/>
-      <rect x="10" y="22" width="20" height="25" fill="#c0392b"/>
-      <rect x="5" y="25" width="6" height="20" fill="#e74c3c"/>
-      <rect x="29" y="25" width="6" height="20" fill="#e74c3c"/>
-      <rect x="12" y="47" width="7" height="13" fill="#2c3e50"/>
-      <rect x="21" y="47" width="7" height="13" fill="#2c3e50"/>
-    </svg>
+    <svg viewBox="0 0 40 60" width="40" height="60"><circle cx="20" cy="12" r="10" fill="#e74c3c"/><rect x="10" y="22" width="20" height="25" fill="#c0392b"/><rect x="5" y="25" width="6" height="20" fill="#e74c3c"/><rect x="29" y="25" width="6" height="20" fill="#e74c3c"/><rect x="12" y="47" width="7" height="13" fill="#2c3e50"/><rect x="21" y="47" width="7" height="13" fill="#2c3e50"/></svg>
     <div id="bot-shield" class="shield"></div>
   </div>
 
   <div id="round-overlay"><span id="round-text"></span></div>
 </div>
 
-<!-- МОБИЛЬНЫЕ ДЖОЙСТИКИ -->
 <div id="mobile-controls" class="hidden">
   <div id="joy-left" class="joystick"><div class="joy-knob"></div></div>
   <div id="joy-right" class="joystick"><div class="joy-knob"></div></div>
 </div>
 
-<!-- НИЖНИЕ КНОПКИ -->
 <div id="bottom-buttons">
   <button id="btn-back">← Меню</button>
   <button id="btn-settings">⚙</button>
   <button id="btn-fullscreen">⛶</button>
 </div>
 
-<!-- ОКНО НАСТРОЕК -->
 <div id="settings-overlay">
   <div id="settings-panel">
     <h2 id="settings-title">Настройки</h2>
-    <div class="setting-row">
-      <label id="label-music">Музыка</label>
-      <input type="checkbox" id="toggle-music" checked>
-      <input type="range" id="volume-music" min="0" max="100" value="50">
-    </div>
-    <div class="setting-row">
-      <label id="label-sfx">Звуки</label>
-      <input type="range" id="volume-sfx" min="0" max="100" value="70">
-    </div>
-    <div class="setting-row">
-      <label id="label-controls">Управление</label>
-      <select id="select-controls">
-        <option value="wasd">WASD + E/S</option>
-        <option value="arrows">Стрелки + Ю/↓</option>
-      </select>
-    </div>
+    <div class="setting-row"><label id="label-music">Музыка</label><input type="checkbox" id="toggle-music" checked><input type="range" id="volume-music" min="0" max="100" value="50"></div>
+    <div class="setting-row"><label id="label-sfx">Звуки</label><input type="range" id="volume-sfx" min="0" max="100" value="70"></div>
+    <div class="setting-row"><label id="label-controls">Управление</label><select id="select-controls"><option value="wasd">WASD + E/S</option><option value="arrows">Стрелки + Ю/↓</option></select></div>
     <button id="btn-close-settings">Закрыть</button>
   </div>
 </div>
 
-<!-- УСЛОВНАЯ ЗАГРУЗКА SDK -->
-<script>
-  if (window.location.protocol !== 'file:') {
-    var sdkScript = document.createElement('script');
-    sdkScript.src = 'https://yandex.ru/games/sdk/v2';
-    document.head.appendChild(sdkScript);
-  }
-</script>
-
+<script>if(window.location.protocol!=='file:'){var s=document.createElement('script');s.src='https://yandex.ru/games/sdk/v2';document.head.appendChild(s);}</script>
 <script src="lang.js"></script>
 <script src="js/settings.js"></script>
 <script src="js/device.js"></script>
@@ -140,6 +87,7 @@
 <script src="js/player.js"></script>
 <script src="js/bot.js"></script>
 <script src="js/input.js"></script>
+<script src="js/cards.js"></script>
 <script src="js/game.js"></script>
 <script src="js/main.js"></script>
 </body>

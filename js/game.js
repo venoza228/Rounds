@@ -1,151 +1,184 @@
-// js/game.js
 (function() {
-  const WINS_TO_WIN = 3;
-  const TARGET_FPS = 60;
-  const FRAME_TIME = 1000 / TARGET_FPS;
+  const WTW = 10;
+  const FPS = 60;
+  const FT = 1000 / FPS;
 
-  const state = {
+  const st = {
     mode: 'bot',
-    mapIndex: 0,
-    scoreP1: 0,
-    scoreP2: 0,
-    running: false,
-    lastTime: 0
+    mapIdx: 0,
+    s1: 0,
+    s2: 0,
+    run: false,
+    lt: 0
   };
 
-  let langData = null;
-  let currentLang = 'ru';
-  let onMatchEnd = null;
+  let lang = null;
+  let clang = 'ru';
+  let onEnd = null;
 
-  function initGame(lang, langCode) {
-    langData = lang;
-    currentLang = langCode;
-  }
+  function initGame(l, c) { lang = l; clang = c; }
+  function setMatchEndCallback(cb) { onEnd = cb; }
+  function setMatchConfig(m, i) { st.mode = m; st.mapIdx = i; }
 
-  function setMatchEndCallback(cb) { onMatchEnd = cb; }
+  function loop(ts) {
+    if (!st.lt) st.lt = ts;
+    const el = ts - st.lt;
 
-  function setMatchConfig(mode, mapIndex) {
-    state.mode = mode;
-    state.mapIndex = mapIndex;
-  }
+    if (el >= FT) {
+      const dt = el / FT;
 
-  function gameLoop(timestamp) {
-    if (!state.lastTime) state.lastTime = timestamp;
-    const elapsed = timestamp - state.lastTime;
+      if (st.run) {
+        const pl = window.G.player.getPlayers();
 
-    if (elapsed >= FRAME_TIME) {
-      const dt = elapsed / FRAME_TIME;
-      if (state.running) {
-        const players = window.G.player.getPlayers();
-
-        if (state.mode === 'bot') {
+        if (st.mode === 'bot') {
           window.G.player.update(dt, window.G.input.input1, null);
-          window.G.bot.update(dt, players.p1);
-          window.G.bullet.updateBullets(dt, [players.p1, window.G.bot.getBot()]);
-          window.G.ui.updateHPBars(players.p1, window.G.bot.getBot());
-          window.G.ui.updateShieldIcons(players.p1, window.G.bot.getBot());
+          window.G.bot.update(dt, pl.p1);
+          window.G.bullet.updateBullets(dt, [pl.p1, window.G.bot.getBot()]);
+          window.G.ui.updateHPBars(pl.p1, window.G.bot.getBot());
+          window.G.ui.updateShieldIcons(pl.p1, window.G.bot.getBot());
         } else {
           window.G.player.update(dt, window.G.input.input1, window.G.input.input2);
-          window.G.bullet.updateBullets(dt, [players.p1, players.p2]);
-          window.G.ui.updateHPBars(players.p1, players.p2);
-          window.G.ui.updateShieldIcons(players.p1, players.p2);
+          window.G.bullet.updateBullets(dt, [pl.p1, pl.p2]);
+          window.G.ui.updateHPBars(pl.p1, pl.p2);
+          window.G.ui.updateShieldIcons(pl.p1, pl.p2);
         }
 
         window.G.ui.updateEffects(dt);
         window.G.input.clearJustPressed();
-        checkRoundEnd();
+        checkEnd();
       }
-      state.lastTime = timestamp - (elapsed % FRAME_TIME);
+
+      st.lt = ts - (el % FT);
     }
 
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(loop);
   }
 
-  function checkRoundEnd() {
-    const players = window.G.player.getPlayers();
-    let p1hp, p2hp;
-    if (state.mode === 'bot') {
-      p1hp = players.p1.hp;
-      p2hp = window.G.bot.getBot().hp;
+  function checkEnd() {
+    const pl = window.G.player.getPlayers();
+    let h1, h2;
+    if (st.mode === 'bot') {
+      h1 = pl.p1.hp;
+      h2 = window.G.bot.getBot().hp;
     } else {
-      p1hp = players.p1.hp;
-      p2hp = players.p2.hp;
+      h1 = pl.p1.hp;
+      h2 = pl.p2.hp;
     }
 
-    if (p1hp <= 0 || p2hp <= 0) {
-      if (p1hp > 0) state.scoreP1++;
-      else state.scoreP2++;
-      endRound(p1hp > 0);
+    if (h1 <= 0 || h2 <= 0) {
+      st.run = false;
+      const p1w = h1 > 0;
+      if (p1w) st.s1++;
+      else st.s2++;
+      const loserId = p1w ? 'player2' : 'player1';
+      window.G.ui.updateScore(st.s1, st.s2);
+
+      // Бот умер — бот получает случайную карточку мгновенно
+      if (st.mode === 'bot' && loserId === 'player2') {
+        if (window.G.cards && window.G.cards.pickRandomCard) {
+          window.G.cards.pickRandomCard('player2');
+        }
+        endRound(p1w);
+      }
+      // Игрок умер в режиме с ботом — показываем выбор карточек
+      else if (st.mode === 'bot' && loserId === 'player1') {
+        if (window.G.cards && window.G.cards.showCards) {
+          window.G.cards.showCards('player1', function() {
+            endRound(p1w);
+          });
+        } else {
+          endRound(p1w);
+        }
+      }
+      // Локальный режим — показываем проигравшему выбор карточек
+      else {
+        if (window.G.cards && window.G.cards.showCards) {
+          window.G.cards.showCards(loserId, function() {
+            endRound(p1w);
+          });
+        } else {
+          endRound(p1w);
+        }
+      }
     }
   }
 
-  function endRound(p1Won) {
-    state.running = false;
-    window.G.ui.updateScore(state.scoreP1, state.scoreP2);
-    const t = langData[currentLang];
+  function endRound(p1w) {
+    const t = lang[clang];
 
-    if (state.scoreP1 >= WINS_TO_WIN || state.scoreP2 >= WINS_TO_WIN) {
-      let resultText;
-      if (state.scoreP1 >= WINS_TO_WIN) {
-        resultText = state.mode === 'bot' ? t.playerWins : t.p1Wins;
+    if (st.s1 >= WTW || st.s2 >= WTW) {
+      let txt;
+      if (st.s1 >= WTW) {
+        txt = st.mode === 'bot' ? t.playerWins : t.p1Wins;
         window.G.audio.playWin();
       } else {
-        resultText = state.mode === 'bot' ? t.botWins : t.p2Wins;
+        txt = st.mode === 'bot' ? t.botWins : t.p2Wins;
         window.G.audio.playLose();
       }
-      window.G.ui.setOverlayText(resultText);
+
+      window.G.ui.setOverlayText(txt);
       window.G.ui.showOverlay();
+
+      if (window.G.cards && window.G.cards.resetAllCards) {
+        window.G.cards.resetAllCards();
+      }
+
       setTimeout(function() {
         window.G.ui.hideOverlay();
-        if (onMatchEnd) onMatchEnd();
+        if (onEnd) onEnd();
       }, 2500);
       return;
     }
 
-    if (p1Won) window.G.audio.playWin();
+    if (p1w) window.G.audio.playWin();
     else window.G.audio.playLose();
-    window.G.ui.setOverlayText(t.roundStart);
+
+    window.G.ui.setOverlayText(t.roundStart + ' (' + (st.s1 + st.s2 + 1) + '/' + WTW + ')');
     window.G.ui.showOverlay();
     window.G.audio.playRoundStart();
 
     setTimeout(function() {
       window.G.ui.hideOverlay();
-      startNewRound();
+      newRound();
     }, 1500);
   }
 
-  function startNewRound() {
+  function newRound() {
     window.G.player.reset();
-    if (state.mode === 'bot') window.G.bot.resetBot();
+    if (st.mode === 'bot') window.G.bot.resetBot();
     window.G.bullet.clearBullets();
     window.G.ui.clearEffects();
-    const players = window.G.player.getPlayers();
-    const p2 = state.mode === 'bot' ? window.G.bot.getBot() : players.p2;
-    window.G.ui.updateHPBars(players.p1, p2);
-    window.G.ui.updateShieldIcons(players.p1, p2);
-    state.running = true;
+
+    const pl = window.G.player.getPlayers();
+    const p2 = st.mode === 'bot' ? window.G.bot.getBot() : pl.p2;
+    window.G.ui.updateHPBars(pl.p1, p2);
+    window.G.ui.updateShieldIcons(pl.p1, p2);
+
+    st.run = true;
   }
 
   function startMatch() {
-    state.scoreP1 = 0;
-    state.scoreP2 = 0;
+    st.s1 = 0;
+    st.s2 = 0;
     window.G.ui.updateScore(0, 0);
-    window.G.map.setMap(state.mapIndex);
+    window.G.map.setMap(st.mapIdx);
 
-    const elBot = document.getElementById('bot');
-    const elShieldIcon2 = document.getElementById('shield-icon-p2');
-    
-    // Оба персонажа всегда видимы
-    elBot.classList.remove('hidden');
-    if (elShieldIcon2) elShieldIcon2.style.display = 'flex';
+    document.getElementById('bot').style.display = 'block';
+    document.getElementById('shield-icon-p2').style.display = 'flex';
 
-    startNewRound();
+    newRound();
   }
 
   function init() {
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(loop);
   }
 
   window.G = window.G || {};
-  window.G.game = { initGame, init, setMatchConfig, setMatchEndCallback, startMatch };
+  window.G.game = {
+    initGame: initGame,
+    init: init,
+    setMatchConfig: setMatchConfig,
+    setMatchEndCallback: setMatchEndCallback,
+    startMatch: startMatch
+  };
 })();
